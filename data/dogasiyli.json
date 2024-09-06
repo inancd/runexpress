@@ -1,0 +1,72 @@
+[
+  {
+    "activityType": "running",
+    "coords": {
+      "accuracy": 21.491072610855102,
+      "altitude": 43.79999923706055,
+      "altitudeAccuracy": 2.215987325489521,
+      "heading": 200.35832286071778,
+      "latitude": 40.8054325418,
+      "longitude": 29.261464619799998,
+      "speed": 0.42903770703822375
+    },
+    "mocked": true,
+    "timestamp": 1725366289573
+  },
+  {
+    "activityType": "running",
+    "coords": {
+      "accuracy": 12.496000289916992,
+      "altitude": 43.79999923706055,
+      "altitudeAccuracy": 2.2002856731414795,
+      "heading": 207.4859161376953,
+      "latitude": 40.8054215,
+      "longitude": 29.2614566,
+      "speed": 0.45658743381500244
+    },
+    "mocked": false,
+    "timestamp": 1725366294574
+  },
+  {
+    "activityType": "running",
+    "coords": {
+      "accuracy": 7.449999809265137,
+      "altitude": 43.79999923706055,
+      "altitudeAccuracy": 2.230333089828491,
+      "heading": 190.59793090820312,
+      "latitude": 40.8054157,
+      "longitude": 29.2614557,
+      "speed": 0.2362218201160431
+    },
+    "mocked": false,
+    "timestamp": 1725366297573
+  },
+  {
+    "activityType": "running",
+    "coords": {
+      "accuracy": 7.057000160217285,
+      "altitude": 43.79999923706055,
+      "altitudeAccuracy": 2.203984022140503,
+      "heading": 163.34474182128906,
+      "latitude": 40.8054097,
+      "longitude": 29.2614586,
+      "speed": 0.23429685831069946
+    },
+    "mocked": false,
+    "timestamp": 1725366300573
+  },
+  {
+    "activityType": "running",
+    "coords": {
+      "accuracy": 6.9029998779296875,
+      "altitude": 43.79999923706055,
+      "altitudeAccuracy": 2.2339885234832764,
+      "heading": 199.88441467285156,
+      "latitude": 40.805386,
+      "longitude": 29.2614467,
+      "speed": 0.8655892014503479
+    },
+    "mocked": false,
+    "timestamp": 1725366303573
+  }
+]
