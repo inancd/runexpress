@@ -12,3 +12,6 @@ coverage
 
 # Benchmarking
 benchmarks/graphs
+config/mapsKey.txt
+config/s3Credentials.json
+data/*

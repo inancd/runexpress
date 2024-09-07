@@ -1,27 +1,58 @@
-async function fetchData(username) {
+async function fetchMapsData(username, enforceUpdate=false) {
     const response = await fetch(`/data/${username}`);
-    if (!response.ok) {
+    if (!response.ok || enforceUpdate) {
         throw new Error('User not found');
-    }
+    }    
     const the_response = await response.json();
+    // console.log(the_response keys)
+    // for (const [key, value] of Object.entries(the_response)) {
+    //     if (typeof value === 'string') {
+    //         console.log(`***the_response-str item <${key}>: len<${value.length}>`);
+    //     } else if (Array.isArray(value)) {
+    //         console.log(`***the_response-array item <${key}>: length<${value.length}>`);
+    //     } else if (typeof value === 'object') {
+    //         console.log(`***the_response-object item <${key}>: keys<${Object.keys(value).length}>`);
+    //     } else {
+    //         console.log(`***the_response-other item type <${key}>: type<${typeof value}>`);
+    //     }
+    // }
 
     // the_response is either the data itself or the_response.data is the one we are expecting
-    const data = the_response.data || the_response;
+    const gpsArr = the_response?.gpsArr;
     
     // Check if the data is indeed an array
-    if (!Array.isArray(data)) {
+    if (!Array.isArray(gpsArr)) {
         throw new Error('Expected an array of data but received something else');
     }
 
-    return data.map(item => ({
+    return gpsArr.map(item => ({
         lat: item.coords.latitude,
         lng: item.coords.longitude,
         title: item.activityType
     }));
 }
 
-
 async function initMap() {
+    try {
+        // Fetch the Google Maps API through the proxy route
+        const script = document.createElement('script');
+        script.src = '/proxy/maps';  // The proxy route
+        script.async = true;
+
+        document.head.appendChild(script);
+
+        script.onload = () => {
+            console.log('Google Maps loaded via proxy');
+            startMap();  // Manually start the map
+        };
+        console.log('Script appended');
+    } catch (error) {
+        console.error('Error loading Maps API key or script:', error);
+    }
+}
+
+async function startMap() {
+    console.log('Starting map...');
     try {
         const fullPath = window.location.pathname.split('/');
         const username = fullPath[1];
@@ -36,8 +67,9 @@ async function initMap() {
         // });
 
         // Fetch the data and assign it to jsonData
-        const jsonData = await fetchData(username);
+        const jsonData = await fetchMapsData(username, false);
 
+        console.log(`fetchMapsData succeded for username: ${username} and fullPath: ${fullPath}`);
         const firstPin = jsonData[0];
         const lastPin = jsonData[jsonData.length - 1];
 

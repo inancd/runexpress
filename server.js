@@ -1,19 +1,38 @@
 const express = require('express');
+const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
+const { handleUserData } = require('./public/scripts/dataHandler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const enforceUpdate = false;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/data/*', (req, res) => {
+app.get('/proxy/maps', async (req, res) => {
+  const mapsKey = fs.readFileSync(path.join(__dirname, 'config/mapsKey.txt'), 'utf-8');
+  const googleMapsApiUrl = `https://maps.googleapis.com/maps/api/js?key=${mapsKey}&loading=async&libraries=marker`;
+  try {
+      const response = await axios.get(googleMapsApiUrl);
+      res.send(response.data);
+  } catch (error) {
+      res.status(500).send('Error fetching Google Maps API');
+  }
+});
+
+app.get('/data/*', async (req, res) => {
   const fullPath = req.params[0];  // Capture everything after /data/
   const [username, ...queryParts] = fullPath.split('?');
   const filePath = path.join(__dirname, 'data', `${username}.json`);
 
   //console.log(`app.get-data-Username: ${username}`);
   //console.log(`app.get-data-File path: ${filePath}`);
+
+  // if the file doesn't exist first try calling fetchMapsData in maps.js
+  if (!fs.existsSync(filePath)) {
+    await handleUserData(username, enforceUpdate);
+  }
 
   // Check if the file exists
   fs.readFile(filePath, (err, data) => {
@@ -22,34 +41,12 @@ app.get('/data/*', (req, res) => {
     }
 
     const jsonData = JSON.parse(data);
-    // const response = {
-    //   username: username,
-    //   data: jsonData,
-    // };
-
-    // Process query parameters (key-value pairs after `?`)
-    // queryParts.forEach(part => {
-    //   const [key, value] = part.split('=');
-    //   response[key] = value;
-    // });
-
-    // for (const [key, value] of Object.entries(response)) {
-    //   if (Array.isArray(value)) {
-    //     console.log(`${key} is an array with length ${value.length}`);
-    //   } else if (typeof value === 'object' && value !== null) {
-    //     console.log(`${key} is an object with ${Object.keys(value).length} keys`);
-    //   } else if (typeof value === 'string') {
-    //     console.log(`${key} is ${value}`);
-    //   } else {
-    //     console.log(`${key} is ${value}`);
-    //   }
-    // }
 
     res.json(jsonData);
   });
 });
 
-app.get('/:username', (req, res) => {
+app.get('/:username', async (req, res) => {
   const username = req.params.username;
 
   // Ignore favicon.ico requests
@@ -62,6 +59,11 @@ app.get('/:username', (req, res) => {
   //console.log(`app.get-username-Username: ${username}`);
   //console.log(`app.get-username-File path: ${filePath}`);
 
+  // if the file doesn't exist first try calling fetchMapsData in maps.js
+  if (!fs.existsSync(filePath)) {
+    await handleUserData(username, enforceUpdate);
+  }
+
   fs.access(filePath, fs.constants.F_OK, (err) => {
     if (err) {
       return res.status(404).render('error', { message: 'Böyle bir kullanıcı yok' });
@@ -69,7 +71,6 @@ app.get('/:username', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
   });
 });
-
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
