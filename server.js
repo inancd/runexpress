@@ -19,7 +19,7 @@ app.get('/data/*', async (req, res) => {
 
   // if the file doesn't exist first try calling fetchMapsData in maps.js
   if (!fs.existsSync(filePath)) {
-    await handleUserData(username, enforceUpdate);
+    await handleUserData(username, false);
   }
 
   // Check if the file exists
@@ -44,11 +44,11 @@ app.get('/:username', async (req, res) => {
 
   const filePath = path.join(__dirname, 'data', `${username}.json`);
 
-  //console.log(`app.get-username-Username: ${username}`);
-  //console.log(`app.get-username-File path: ${filePath}`);
+  console.log(`app.get-username-Username: ${username}`);
+  console.log(`app.get-username-File path: ${filePath}`);
 
   // if the file doesn't exist first try calling fetchMapsData in maps.js
-  if (!fs.existsSync(filePath)) {
+  if (!fs.existsSync(filePath) || enforceUpdate) {
     await handleUserData(username, enforceUpdate);
   }
 
