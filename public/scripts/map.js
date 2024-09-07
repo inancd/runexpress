@@ -67,7 +67,7 @@ async function startMap() {
         // console.log(`queryParams1: ${queryParams}`);
 
         // queryParams.forEach(param => {
-        //     const [key, value] = param.split(':');
+        //     const [key, value] = param.split('=');
         //     console.log(`1-${key} is ${value}`);
         // });
 

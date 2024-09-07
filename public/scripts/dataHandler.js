@@ -55,7 +55,20 @@ async function handleUserData(username, enforceUpdate=false) {
     const rootFold = path.dirname(path.dirname(__dirname));
     const localFilePath = path.join(rootFold, 'data', `${username}.json`);
     console.log(`handleUserData--> from path=<${username}> into local <${localFilePath}>`);
-    if (!fs.existsSync(localFilePath) || enforceUpdate) {
+
+    const fileExists = fs.existsSync(localFilePath);
+    if (fileExists) {
+        const stats = fs.statSync(localFilePath);
+        const fileAgeInSeconds = (Date.now() - stats.mtime.getTime()) / 1000; // Time difference in seconds
+        
+        // 36 seconds is 6'00'' pace for 100 meters
+        if (enforceUpdate && fileAgeInSeconds < 36) {
+            console.log('handleUserData-->File exists and is less than 36 seconds old. Skipping download.');
+            enforceUpdate = false;
+        }
+    }
+
+    if (!fileExists || enforceUpdate) {
         console.log('handleUserData-->File does not exist or enforceUpdate is true. Generating new JSON file.');
 
         // Decompress gpsArr, stepsArr, runParams_base64, and runVisuals_base64
