@@ -42,17 +42,30 @@ app.get('/:username', async (req, res) => {
     return res.status(204).end();  // Return no content for favicon requests
   }
 
-  const filePath = path.join(__dirname, 'data', `${username}.json`);
+  const localFilePath = path.join(__dirname, 'data', `${username}.json`);
+  let force_to_download = enforceUpdate;
+
+  const fileExists = fs.existsSync(localFilePath);
+  if (fileExists) {
+      const stats = fs.statSync(localFilePath);
+      const fileAgeInSeconds = (Date.now() - stats.mtime.getTime()) / 1000; // Time difference in seconds
+      
+      // 36 seconds is 6'00'' pace for 100 meters
+      if (force_to_download && fileAgeInSeconds < 36) {
+          console.log('handleUserData-->File exists and is less than 36 seconds old. Skipping download.');
+          force_to_download = false;
+      }
+  }  
 
   console.log(`app.get-username-Username: ${username}`);
-  console.log(`app.get-username-File path: ${filePath}`);
+  console.log(`app.get-username-File path: ${localFilePath}`);
 
   // if the file doesn't exist first try calling fetchMapsData in maps.js
-  if (!fs.existsSync(filePath) || enforceUpdate) {
-    await handleUserData(username, enforceUpdate);
+  if (!fs.existsSync(localFilePath) || force_to_download) {
+    await handleUserData(username, force_to_download);
   }
 
-  fs.access(filePath, fs.constants.F_OK, (err) => {
+  fs.access(localFilePath, fs.constants.F_OK, (err) => {
     if (err) {
       return res.status(404).render('error', { message: 'Böyle bir kullanıcı yok' });
     }

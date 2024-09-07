@@ -37,22 +37,30 @@ document.addEventListener("DOMContentLoaded", async function () {
         const remainingTime = data.runVisuals && data.runVisuals.time ? 
             data.runVisuals.time.remain.str : 'N/A';
         const gpsPoints = data.gpsArr ? data.gpsArr.length : 'N/A';
-
-        // Create a table for the fetched data
+        const last_gps_time = data.gpsArr && data.gpsArr.length > 0 ? 
+                                new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Istanbul', 
+                                                                year: 'numeric', month: 'long', day: 'numeric', 
+                                                                hour: '2-digit', minute: '2-digit', second: '2-digit', 
+                                                                hour12: false, timeZoneName: 'longGeneric' }).format(new Date(data.gpsArr[data.gpsArr.length - 1].timestamp)) 
+                                : 'N/A';
+    
         let infoTable = `
-          <table>
-            <tr><td><b>Runner</b></td><td>${username || 'N/A'}</td></tr>
-            <tr><td><b>Device</b></td><td>${data.device || 'N/A'}</td></tr>
-            <tr><td><b>Pace</b></td><td>${`${data.pace} per km` || 'N/A'}</td></tr>
-            <tr><td><b>Run Started</b></td><td>${runStarted}</td></tr>
-            <tr><td><b>Total Calories Burnt</b></td><td>${caloriesBurnt}</td></tr>
-            <tr><td><b>Total Distance</b></td><td>${distanceElapsed} meters</td></tr>
-            <tr><td><b>Remaining Distance</b></td><td>${distanceRemaining} meters</td></tr>
-            <tr><td><b>Elapsed Time</b></td><td>${elapsedTime}</td></tr>
-            <tr><td><b>Remaining Time</b></td><td>${remainingTime}</td></tr>
-            <tr><td><b>GPS point count</b></td><td>${gpsPoints}</td></tr>
-          </table>
+        <table style="border-collapse: collapse; width: 100%;">
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>Runner</b></td><td style="border: 1px solid black; padding: 8px;">${username || 'N/A'}</td></tr>
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>Device</b></td><td style="border: 1px solid black; padding: 8px;">${data.device || 'N/A'}</td></tr>
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>Pace</b></td><td style="border: 1px solid black; padding: 8px;">${`${data.pace} per km` || 'N/A'}</td></tr>
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>Run Started</b></td><td style="border: 1px solid black; padding: 8px;">${runStarted}</td></tr>
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>Last GPS Data Time</b></td><td style="border: 1px solid black; padding: 8px;">${last_gps_time}</td></tr>
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>Total Calories Burnt</b></td><td style="border: 1px solid black; padding: 8px;">${caloriesBurnt}</td></tr>
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>Total Distance</b></td><td style="border: 1px solid black; padding: 8px;">${distanceElapsed} meters</td></tr>
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>Remaining Distance</b></td><td style="border: 1px solid black; padding: 8px;">${distanceRemaining} meters</td></tr>
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>Elapsed Time</b></td><td style="border: 1px solid black; padding: 8px;">${elapsedTime}</td></tr>
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>Remaining Time</b></td><td style="border: 1px solid black; padding: 8px;">${remainingTime}</td></tr>
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>GPS point count</b></td><td style="border: 1px solid black; padding: 8px;">${gpsPoints}</td></tr>
+        </table>
         `;
+                              
+      
         
         // Add the table to the extraInfo div
         extraInfo.innerHTML += infoTable;
