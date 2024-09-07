@@ -34,20 +34,25 @@ async function fetchMapsData(username, enforceUpdate=false) {
 
 async function initMap() {
     try {
-        // Fetch the Google Maps API through the proxy route
+        // Dynamically create and append the Google Maps script
         const script = document.createElement('script');
-        script.src = '/proxy/maps';  // The proxy route
+        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAYOzXYTEZZHMTWTlvJJ_cmdJknJrrES2c&loading=async&libraries=marker&callback=retryStartMap`;
         script.async = true;
 
         document.head.appendChild(script);
-
-        script.onload = () => {
-            console.log('Google Maps loaded via proxy');
-            startMap();  // Manually start the map
-        };
-        console.log('Script appended');
+        console.log('Google Maps script appended');
     } catch (error) {
         console.error('Error loading Maps API key or script:', error);
+    }
+}
+
+async function retryStartMap() {
+    if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
+        console.log('Google Maps is available. Starting map...');
+        startMap();
+    } else {
+        console.log('Google Maps not yet available, retrying...');
+        setTimeout(retryStartMap, 500);  // Retry after 500ms
     }
 }
 

@@ -1,25 +1,13 @@
 const express = require('express');
-const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
 const { handleUserData } = require('./public/scripts/dataHandler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const enforceUpdate = false;
+const enforceUpdate = true;
 
 app.use(express.static(path.join(__dirname, 'public')));
-
-app.get('/proxy/maps', async (req, res) => {
-  const mapsKey = fs.readFileSync(path.join(__dirname, 'config/mapsKey.txt'), 'utf-8');
-  const googleMapsApiUrl = `https://maps.googleapis.com/maps/api/js?key=${mapsKey}&loading=async&libraries=marker`;
-  try {
-      const response = await axios.get(googleMapsApiUrl);
-      res.send(response.data);
-  } catch (error) {
-      res.status(500).send('Error fetching Google Maps API');
-  }
-});
 
 app.get('/data/*', async (req, res) => {
   const fullPath = req.params[0];  // Capture everything after /data/
