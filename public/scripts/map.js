@@ -75,6 +75,14 @@ async function startMap() {
         const jsonData = await fetchMapsData(username, false);
 
         console.log(`fetchMapsData succeded for username: ${username} and fullPath: ${fullPath}`);
+
+        if (jsonData.length === 0) {
+            console.log('jsonData is empty');
+            const mapDiv = document.getElementById("map");
+            mapDiv.innerHTML = 'No gps data found';
+            return;
+        }
+
         const firstPin = jsonData[0];
         const lastPin = jsonData[jsonData.length - 1];
 

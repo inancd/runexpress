@@ -1,0 +1,27 @@
+.progress-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.circular-progress {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: conic-gradient(
+        #4ade80 0% 25%, /* Adjust color and percentage dynamically */
+        #bbcf07 25% 100% /* Remaining progress background color */
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 0 auto; /* Center the circle horizontally */
+}
+
+.circular-progress .progress-value {
+    font-size: 18px;
+    font-weight: bold;
+    position: absolute;
+    text-align: center;
+}

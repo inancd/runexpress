@@ -57,13 +57,13 @@ const encrypt = (text, pass) => {
 }
 
 // Decryption using AES
-const decrypt = (ciphertext, pass) => {
+const decrypt = (ciphertext, pass, verbose) => {
     try {
-        const bytes = CryptoJS.AES.decrypt(ciphertext, pass);
+        const bytes = CryptoJS.AES.decrypt(ciphertext, pass, verbose);
         const originalText = bytes.toString(CryptoJS.enc.Utf8);
         return originalText;
     } catch (error) {
-        console.error(`Decryption error: ${error.message}`);
+        if (verbose) { console.error(`Decryption error: ${error.message}`); }
         return '';
     }
 };
@@ -82,14 +82,14 @@ const decompressToArray = (compressedString, passw, expectedString, verbose = fa
         return [];
     }
 
-    const decryptedString = decrypt(compressedString, passw);
+    const decryptedString = decrypt(compressedString, passw, verbose);
     if (decryptedString && decryptedString.includes(expectedString)) {
         if (verbose) console.log(`decompressToArray - Successfully decrypted data`);
         return JSON.parse(decryptedString);
     }
 
     if (verbose) console.log('decompressToArray - Decryption failed. Proceeding to decompression');
-    const unzippedString = strGzip(compressedString, 'decompress', verbose).decompressedData;
+    const unzippedString = strGzip(compressedString, verbose).decompressedData;
 
     if (unzippedString && unzippedString.includes(expectedString)) {
         if (verbose) console.log(`decompressToArray - Successfully unzipped data`);

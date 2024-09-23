@@ -90,15 +90,24 @@ async function handleUserData(username, enforceUpdate=false) {
         // If stepsArr length is bigger than 0
         try {
             if (new_generated_data.stepsArr.length > 0) {
-                new_generated_data.lap250 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, 250);
-                new_generated_data.lap500 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, 500);
-                new_generated_data.lap1000 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, 1000);
+                new_generated_data.lap250 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, new_generated_data.runParams, 250);
+                new_generated_data.lap500 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, new_generated_data.runParams, 500);
+                new_generated_data.lap1000 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, new_generated_data.runParams, 1000);
             }                
         } catch (error) {
             console.log('handleUserData-->Error in generateLapJson', error);
             new_generated_data.lap250 = [];
             new_generated_data.lap500 = [];
             new_generated_data.lap1000 = [];
+        }
+
+        // check if time_seconds is 0
+        //console.log('XXXhandleUserData-->new_generated_data.time_seconds=', new_generated_data.time_seconds);
+        //console.log('XXXhandleUserData-->new_generated_data.stepsArr.length=', new_generated_data.stepsArr.length);
+        if (new_generated_data.time_seconds === 0 && new_generated_data.stepsArr.length > 0) {
+            // sum all the time_diff in stepsArr
+            new_generated_data.time_seconds = new_generated_data.stepsArr.reduce((acc, step) => acc + step.time_diff, 0);
+            new_generated_data.time_readable = formatTime(new_generated_data.time_seconds);
         }
 
         // Add the deviceInfo as it is
@@ -115,6 +124,18 @@ async function handleUserData(username, enforceUpdate=false) {
     const rawData = fs.readFileSync(localFilePath, 'utf-8');
     const data = JSON.parse(rawData);
     return data;    
+}
+
+function formatTime(totalSeconds) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.round(totalSeconds % 60);
+
+    const hoursStr = hours > 0 ? `${hours}:` : '';
+    const minutesStr = `${minutes.toString().padStart(2, '0')}:`;
+    const secondsStr = seconds.toString().padStart(2, '0');
+
+    return `${hoursStr}${minutesStr}${secondsStr}`;
 }
 
 module.exports = { handleUserData };

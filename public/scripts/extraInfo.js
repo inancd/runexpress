@@ -30,7 +30,10 @@ document.addEventListener("DOMContentLoaded", async function () {
         const caloriesBurnt = runParams.calories ? `${Math.ceil(runParams.calories.total)} cal` : 'N/A';
         const distanceElapsed = data.runVisuals && data.runVisuals.distance ? Math.ceil(data.runVisuals.distance.elapsed.num) : -1;
         const distanceRemaining = data.runVisuals && data.runVisuals.distance ? Math.floor(data.runVisuals.distance.remain.num) : -1;
-        const elapsedTimeStr = data.runVisuals && data.runVisuals.time ? data.runVisuals.time.elapsed.str : 'N/A';
+
+        const elapsedTimeInSeconds =runParams && runParams?.durations.active ? runParams.durations.active / 1000 : 0;
+        const elapsedTimeStr = formatTime(elapsedTimeInSeconds);
+
         const remainingTimeStr = data.runVisuals && data.runVisuals.time ? data.runVisuals.time.remain.str : 'N/A';       
         const gpsPoints = data.gpsArr ? data.gpsArr.length : 'N/A';
         const last_gps_time = data.gpsArr && data.gpsArr.length > 0 ? 
@@ -83,7 +86,6 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         try {
             const totalDistance = distanceElapsed + distanceRemaining;
-            const elapsedTimeInSeconds = data.runVisuals && data.runVisuals.time ? data.runVisuals.time.elapsed.num : 0;
             const remainingTimeInSeconds = data.runVisuals && data.runVisuals.time ? Math.max(data.runVisuals.time.remain.num, 0) : 0;
             const totalTimeInSeconds = elapsedTimeInSeconds + remainingTimeInSeconds;            
             // Calculate distance progress percentage
@@ -108,34 +110,39 @@ document.addEventListener("DOMContentLoaded", async function () {
             // Clear any existing content
             summaryInfoDiv.innerHTML = '';
 
+            // Function to create circular progress element
+            const createCircularProgress = (label, progress, progressColor, totalLabel) => {
+                const containerDiv = document.createElement('div');
+                containerDiv.classList.add('progress-container');
+            
+                const circularDiv = document.createElement('div');
+                circularDiv.classList.add('circular-progress');
+                circularDiv.style.background = `conic-gradient(${progressColor} ${progress}%, #bbcf07 ${progress}% 100%)`; // Adjusting gradient
+            
+                circularDiv.innerHTML = `
+                    <div class="progress-value">${Math.floor(progress)}%</div>
+                `;
+            
+                const labelP = document.createElement('p');
+                labelP.classList.add('text-center', 'mt-2', 'font-bold');
+                labelP.textContent = label;
+            
+                const totalLabelP = document.createElement('p');
+                totalLabelP.classList.add('text-center');
+                totalLabelP.textContent = totalLabel;
+            
+                containerDiv.appendChild(circularDiv);
+                containerDiv.appendChild(labelP);
+                containerDiv.appendChild(totalLabelP);
+            
+                return containerDiv;
+            };
+            
             // Create the visual elements
-            // 1. Distance Progress Bar
-            const distanceDiv = document.createElement('div');
-            distanceDiv.innerHTML = `
-                <div>
-                    <h3 class="text-center font-bold">Distance</h3>
-                    <div class="relative pt-1">
-                        <div class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-gray-200">
-                            <div style="width:${distanceProgress}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"></div>
-                        </div>
-                        <p class="text-center">${distanceElapsed}m / ${totalDistance}m (${Math.floor(distanceElapsed/totalDistance*100)}%)</p>
-                    </div>
-                </div>
-            `;
-
-            // 2. Time Progress Bar
-            const timeDiv = document.createElement('div');
-            timeDiv.innerHTML = `
-                <div>
-                    <h3 class="text-center font-bold">Time</h3>
-                    <div class="relative pt-1">
-                        <div class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-gray-200">
-                            <div style="width:${timeProgress}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"></div>
-                        </div>
-                        <p class="text-center">${formatTime(elapsedTimeInSeconds)} / ${formatTime(totalTimeInSeconds)} (${Math.floor(elapsedTimeInSeconds/totalTimeInSeconds*100)}%)</p>
-                    </div>
-                </div>
-            `;
+            // Create circular distance progress
+            const distanceDiv = createCircularProgress('Distance', distanceProgress, '#3b82f6', `${distanceElapsed}m / ${totalDistance}m`);
+            // Create circular time progress
+            const timeDiv = createCircularProgress('Time', timeProgress, '#10b981', `${formatTime(elapsedTimeInSeconds)} / ${formatTime(totalTimeInSeconds)}`);
 
             // 3. Remaining Pace
             const remainingPaceDiv = document.createElement('div');
@@ -160,7 +167,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             summaryInfoDiv.appendChild(timeDiv);
             summaryInfoDiv.appendChild(remainingPaceDiv);
             summaryInfoDiv.appendChild(averagePaceDiv);
-            console.log('Summary info elements added to the DOM:\n**\n', summaryInfoDiv.innerHTML, '\n**');
+            //console.log('Summary info elements added to the DOM:\n**\n', summaryInfoDiv.innerHTML, '\n**');
 
         } catch (error) {
             console.error('Error generating summary info:', error);

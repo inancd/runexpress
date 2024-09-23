@@ -66,8 +66,8 @@ const decryptData = async () => {
     const password = await promptPassword();
     
     // Decrypt the credentials and Maps key
-    const decryptedCredentials = decrypt(encryptedCredentials, password);
-    const decryptedMapsKey = decrypt(encryptedMapsKey, password);
+    const decryptedCredentials = decrypt(encryptedCredentials, password, true);
+    const decryptedMapsKey = decrypt(encryptedMapsKey, password, true);
     
     // Save the decrypted data back to the JSON and Maps key file
     fs.writeFileSync(credentialsPath, decryptedCredentials);

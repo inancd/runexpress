@@ -4,11 +4,14 @@ function calc_pace(dist_mt, time_sec) {
   return (PACE_MUL * time_sec) / dist_mt;
 }
 
-async function generateLapJson(stepsArr, gpsArr, lapDistance) {
+async function generateLapJson(stepsArr, gpsArr, runParams, lapDistance) {
     let accumDist = 0;
     let accumTime = 0;
     let lapID = 1;
     let laps = [];
+
+    const useGPSArrayInfo = gpsArr.length > 2;
+    const initTimeStamp = runParams.timestamps.activityStart;
   
     for (let i = 0; i < stepsArr.length; i++) {
       const step = stepsArr[i];
@@ -30,8 +33,8 @@ async function generateLapJson(stepsArr, gpsArr, lapDistance) {
   
           // Compute timestamp
           const totalFraction = positionInStep + fraction;
-          const timestampPrev = gpsArr[i].timestamp;
-          const timestampNext = gpsArr[i + 1] ? gpsArr[i + 1].timestamp : timestampPrev;
+          const timestampPrev = useGPSArrayInfo ? gpsArr[i].timestamp : initTimeStamp + ((accumTime-timeUsed) * 1000);
+          const timestampNext = useGPSArrayInfo ? (gpsArr[i + 1] ? gpsArr[i + 1].timestamp : timestampPrev) : (accumTime * 1000);
           const timestamp = timestampPrev + (timestampNext - timestampPrev) * totalFraction;
   
           laps.push({
