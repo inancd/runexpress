@@ -1,0 +1,10 @@
+pm2 status
+pm2 stop hello
+pm2 stop server
+sudo systemctl restart nginx
+pm2 start hello
+pm2 start server
+
+
+normally alternatively we got:
+nohup node server.js > runsweb_240923_0521.log 2>&1 &
