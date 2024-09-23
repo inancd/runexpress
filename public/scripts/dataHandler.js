@@ -93,12 +93,14 @@ async function handleUserData(username, enforceUpdate=false) {
                 new_generated_data.lap250 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, new_generated_data.runParams, 250);
                 new_generated_data.lap500 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, new_generated_data.runParams, 500);
                 new_generated_data.lap1000 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, new_generated_data.runParams, 1000);
+                new_generated_data.lap5000 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, new_generated_data.runParams, 5000);
             }                
         } catch (error) {
             console.log('handleUserData-->Error in generateLapJson', error);
             new_generated_data.lap250 = [];
             new_generated_data.lap500 = [];
             new_generated_data.lap1000 = [];
+            new_generated_data.lap5000 = [];
         }
 
         // check if time_seconds is 0

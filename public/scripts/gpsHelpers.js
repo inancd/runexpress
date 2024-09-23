@@ -5,61 +5,76 @@ function calc_pace(dist_mt, time_sec) {
 }
 
 async function generateLapJson(stepsArr, gpsArr, runParams, lapDistance) {
-    let accumDist = 0;
-    let accumTime = 0;
-    let lapID = 1;
-    let laps = [];
+  let accumDist = 0;
+  let accumTime = 0;
+  let lapID = 1;
+  let laps = [];
 
-    const useGPSArrayInfo = gpsArr.length > 2;
-    const initTimeStamp = runParams.timestamps.activityStart;
-  
-    for (let i = 0; i < stepsArr.length; i++) {
+  const useGPSArrayInfo = gpsArr.length > 2;
+  const initTimeStamp = runParams.timestamps.activityStart;
+
+  for (let i = 0; i < stepsArr.length; i++) {
       const step = stepsArr[i];
       const stepDistance = step.distance;
       const stepTime = step.time_diff;
       let positionInStep = 0;
-  
+
       while (positionInStep < 1) {
-        const distanceRemaining = lapDistance - accumDist;
-        const distanceAvailable = stepDistance * (1 - positionInStep);
-  
-        if (distanceAvailable >= distanceRemaining) {
-          const fraction = distanceRemaining / stepDistance;
-          const timeUsed = stepTime * fraction;
-          accumDist += distanceRemaining;
-          accumTime += timeUsed;
-  
-          const pace = calc_pace(lapDistance, accumTime);
-  
-          // Compute timestamp
-          const totalFraction = positionInStep + fraction;
-          const timestampPrev = useGPSArrayInfo ? gpsArr[i].timestamp : initTimeStamp + ((accumTime-timeUsed) * 1000);
-          const timestampNext = useGPSArrayInfo ? (gpsArr[i + 1] ? gpsArr[i + 1].timestamp : timestampPrev) : (accumTime * 1000);
-          const timestamp = timestampPrev + (timestampNext - timestampPrev) * totalFraction;
-  
-          laps.push({
-            lapID: lapID,
-            timestamp: timestamp,
-            pace: pace,
-          });
-  
-          lapID += 1;
-          positionInStep += fraction;
-          accumDist = 0;
-          accumTime = 0;
-  
-          if (positionInStep >= 1) {
-            break;
+          const distanceRemaining = lapDistance - accumDist;
+          const distanceAvailable = stepDistance * (1 - positionInStep);
+
+          if (distanceAvailable >= distanceRemaining) {
+              const fraction = distanceRemaining / stepDistance;
+              const timeUsed = stepTime * fraction;
+              accumDist += distanceRemaining;
+              accumTime += timeUsed;
+
+              const pace = calc_pace(lapDistance, accumTime);
+
+              // Compute timestamp
+              const totalFraction = positionInStep + fraction;
+              const timestampPrev = useGPSArrayInfo ? gpsArr[i].timestamp : initTimeStamp + ((accumTime - timeUsed) * 1000);
+              const timestampNext = useGPSArrayInfo ? (gpsArr[i + 1] ? gpsArr[i + 1].timestamp : timestampPrev) : (accumTime * 1000);
+              const timestamp = timestampPrev + (timestampNext - timestampPrev) * totalFraction;
+
+              laps.push({
+                  lapID: lapID,
+                  timestamp: timestamp,
+                  pace: pace,
+              });
+
+              lapID += 1;
+              positionInStep += fraction;
+              accumDist = 0;
+              accumTime = 0;
+
+              if (positionInStep >= 1) {
+                  break;
+              }
+          } else {
+              accumDist += distanceAvailable;
+              accumTime += stepTime * (1 - positionInStep);
+              positionInStep = 1;
           }
-        } else {
-          accumDist += distanceAvailable;
-          accumTime += stepTime * (1 - positionInStep);
-          positionInStep = 1;
-        }
       }
-    }
-  
-    return laps;
+  }
+
+  // Handle remaining data if distance > 100 meters
+  if (accumDist > 100) {
+      const pace = calc_pace(accumDist, accumTime);
+
+      // Compute timestamp for the final lap
+      const lastTimestampPrev = useGPSArrayInfo ? gpsArr[gpsArr.length - 1].timestamp : initTimeStamp;
+      const lastTimestamp = useGPSArrayInfo ? gpsArr[gpsArr.length - 1].timestamp : (accumTime * 1000);
+      console.log(`push remain data accumDist: ${accumDist}, accumTime: ${accumTime}, pace: ${pace}`);
+      laps.push({
+          lapID: lapID,
+          timestamp: lastTimestamp,
+          pace: pace,
+      });
+  }
+
+  return laps;
 }
 
 function toRadians(degrees) {

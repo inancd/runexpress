@@ -28,10 +28,13 @@ document.addEventListener("DOMContentLoaded", async function () {
                                                                                          hour12: false, timeZoneName: 'longGeneric' }).format(new Date(timestamps.activityStart)) 
         : 'N/A';
         const caloriesBurnt = runParams.calories ? `${Math.ceil(runParams.calories.total)} cal` : 'N/A';
-        const distanceElapsed = data.runVisuals && data.runVisuals.distance ? Math.ceil(data.runVisuals.distance.elapsed.num) : -1;
-        const distanceRemaining = data.runVisuals && data.runVisuals.distance ? Math.floor(data.runVisuals.distance.remain.num) : -1;
+        const distanceElapsed = runParams && runParams.distances.total ? Math.ceil(runParams.distances.total) : -1;
+        const totalDistance = data.runVisuals && data.runVisuals.distance ? (Math.floor(data.runVisuals.distance.remain.num+data.runVisuals.distance.elapsed.num)) : distanceElapsed;
+        const distanceRemaining = totalDistance - distanceElapsed;
 
-        const elapsedTimeInSeconds =runParams && runParams?.durations.active ? runParams.durations.active / 1000 : 0;
+        const elapsedTimeInSeconds =(runParams && runParams?.durations.active ? runParams.durations.active / 1000 : 0) + 
+                                    (data?.gpsArr?.length>0 ? (data.gpsArr[data.gpsArr.length - 1].timestamp - runParams.timestamps.lastBeginRun) / 1000 : 0);
+        const totalTimeInSeconds = data.runVisuals && data.runVisuals.time ? data.runVisuals.time.remain.num+data.runVisuals.time.elapsed.num : 0;  
         const elapsedTimeStr = formatTime(elapsedTimeInSeconds);
 
         const remainingTimeStr = data.runVisuals && data.runVisuals.time ? data.runVisuals.time.remain.str : 'N/A';       
@@ -80,14 +83,17 @@ document.addEventListener("DOMContentLoaded", async function () {
             document.getElementById('lap1000Btn').addEventListener('click', function() {
                 generateChart(data.lap1000, 1000);
             });            
+
+            document.getElementById('lap5000Btn').addEventListener('click', function() {
+                generateChart(data.lap5000, 5000);
+            });            
         } catch (error) {
             
         }
 
         try {
-            const totalDistance = distanceElapsed + distanceRemaining;
             const remainingTimeInSeconds = data.runVisuals && data.runVisuals.time ? Math.max(data.runVisuals.time.remain.num, 0) : 0;
-            const totalTimeInSeconds = elapsedTimeInSeconds + remainingTimeInSeconds;            
+                      
             // Calculate distance progress percentage
             const distanceProgress = totalDistance > 0 ? (distanceElapsed / totalDistance) * 100 : 100;
             // Calculate time progress percentage
