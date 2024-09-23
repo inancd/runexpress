@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const S3Manager = require('./S3Manager'); // Assuming your S3Manager is in the same directory
 const { decompressToArray } = require('./dataProcessor');
+const { generateStepsArr, generateLapJson } = require('./gpsHelpers');
 const DEBUG_CONSOLE_OUT = false;
 
 async function download_from_s3(s3FolderPath, s3FileName_begin, s3FileName_end, enforceUpdate=false) {
@@ -72,10 +73,33 @@ async function handleUserData(username, enforceUpdate=false) {
         console.log('handleUserData-->File does not exist or enforceUpdate is true. Generating new JSON file.');
 
         // Decompress gpsArr, stepsArr, runParams_base64, and runVisuals_base64
-        new_generated_data.gpsArr = decompressToArray(detailed_downloaded?.gpsArr, username, 'coords');
-        new_generated_data.stepsArr = decompressToArray(detailed_downloaded?.stepsArr, username, 'distance');
-        new_generated_data.runParams = decompressToArray(detailed_downloaded?.runParams_base64, username, 'distance');
-        new_generated_data.runVisuals = decompressToArray(detailed_downloaded?.runVisuals_base64, username, 'distance');
+        new_generated_data.gpsArr = decompressToArray(detailed_downloaded?.gpsArr, username, 'coords', false);
+        new_generated_data.stepsArr = decompressToArray(detailed_downloaded?.stepsArr, username, 'distance', false);
+        new_generated_data.runParams = decompressToArray(detailed_downloaded?.runParams_base64, username, 'distance', false);
+        new_generated_data.runVisuals = decompressToArray(detailed_downloaded?.runVisuals_base64, username, 'distance', false);
+
+        try {
+            // if stepsArr has len 0
+            if (new_generated_data.stepsArr.length === 0) {
+                new_generated_data.stepsArr = await generateStepsArr(new_generated_data.gpsArr);
+            }            
+        } catch (error) {
+            console.log('handleUserData-->Error in generateStepsArr', error);
+        }
+
+        // If stepsArr length is bigger than 0
+        try {
+            if (new_generated_data.stepsArr.length > 0) {
+                new_generated_data.lap250 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, 250);
+                new_generated_data.lap500 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, 500);
+                new_generated_data.lap1000 = await generateLapJson(new_generated_data.stepsArr, new_generated_data.gpsArr, 1000);
+            }                
+        } catch (error) {
+            console.log('handleUserData-->Error in generateLapJson', error);
+            new_generated_data.lap250 = [];
+            new_generated_data.lap500 = [];
+            new_generated_data.lap1000 = [];
+        }
 
         // Add the deviceInfo as it is
         new_generated_data.deviceInfo = detailed_downloaded?.deviceInfo;

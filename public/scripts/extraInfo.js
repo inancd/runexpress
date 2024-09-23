@@ -64,6 +64,26 @@ document.addEventListener("DOMContentLoaded", async function () {
         
         // Add the table to the extraInfo div
         extraInfo.innerHTML += infoTable;
+
+        try {
+            generateChart(data.lap1000, 1000);
+
+            // Event listeners for buttons
+            document.getElementById('lap250Btn').addEventListener('click', function() {
+                generateChart(data.lap250, 250);
+            });
+
+            // Event listeners for buttons
+            document.getElementById('lap500Btn').addEventListener('click', function() {
+                generateChart(data.lap500, 500);
+            });
+
+            document.getElementById('lap1000Btn').addEventListener('click', function() {
+                generateChart(data.lap1000, 1000);
+            });            
+        } catch (error) {
+            
+        }
     } catch (error) {
         console.error('Error fetching data:', error);
         let errorParagraph = document.createElement('p');
@@ -119,4 +139,89 @@ async function fetchData(username, enforceUpdate = false) {
     }    
     const the_response = await response.json();
     return the_response;
+}
+
+// Function to format the pace into mm'ss'' format
+function formatPace(pace) {
+    if (pace === 0) return '0\'00"';
+    const totalSeconds = pace * 60; // pace is in minutes per km
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = Math.round(totalSeconds % 60);
+    return `${minutes}'${seconds.toString().padStart(2, '0')}"`;
+}
+
+// Function to format timestamp into HH:MM:SS format
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-GB');
+}
+
+// Function to generate the chart
+function generateChart(lapData, lapDistance) {
+    const ctx = document.getElementById('lapChart').getContext('2d');
+
+    // Extract data for the chart
+    const labels = lapData.map(lap => `Lap ${lap.lapID}`);
+    const paces = lapData.map(lap => lap.pace);
+
+    // Determine the pace range for coloring
+    const minPace = Math.min(...paces);
+    const maxPace = Math.max(...paces);
+
+    // Generate background colors based on pace
+    const backgroundColors = paces.map(pace => getColor(pace, minPace, maxPace));
+
+    // Destroy previous chart instance if it exists
+    if (window.lapChartInstance) {
+        window.lapChartInstance.destroy();
+    }
+
+    // Create the chart
+    window.lapChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: `${lapDistance}m Lap Pace`,
+                data: paces,
+                backgroundColor: backgroundColors,
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            return formatPace(value);
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Pace (min/km)'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const index = context.dataIndex;
+                            const lap = lapData[index];
+                            const formattedPace = formatPace(lap.pace);
+                            const formattedTime = formatTimestamp(lap.timestamp);
+                            return `Time: ${formattedTime}\nPace: ${formattedPace}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Function to get color based on pace
+function getColor(value, min, max) {
+    const ratio = (value - min) / (max - min);
+    const red = Math.floor(255 * ratio);
+    const green = Math.floor(255 * (1 - ratio));
+    return `rgb(${red}, ${green}, 0)`;
 }
