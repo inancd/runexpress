@@ -1,7 +1,9 @@
+const fixedStrings = ["initial", "running", "paused", "stopped", "saved"];
 const PACE_MUL = 60 / 3.6;
 function calc_pace(dist_mt, time_sec) {
   return (PACE_MUL * time_sec) / dist_mt;
 }
+
 async function generateLapJson(stepsArr, gpsArr, lapDistance) {
     let accumDist = 0;
     let accumTime = 0;
@@ -57,7 +59,6 @@ async function generateLapJson(stepsArr, gpsArr, lapDistance) {
     return laps;
 }
 
-const fixedStrings = ["initial", "running", "paused", "stopped", "saved"];
 function toRadians(degrees) {
     return (degrees * Math.PI) / 180;
 }

@@ -28,14 +28,10 @@ document.addEventListener("DOMContentLoaded", async function () {
                                                                                          hour12: false, timeZoneName: 'longGeneric' }).format(new Date(timestamps.activityStart)) 
         : 'N/A';
         const caloriesBurnt = runParams.calories ? `${Math.ceil(runParams.calories.total)} cal` : 'N/A';
-        const distanceElapsed = data.runVisuals && data.runVisuals.distance ? 
-            Math.ceil(data.runVisuals.distance.elapsed.num) : 'N/A';
-        const distanceRemaining = data.runVisuals && data.runVisuals.distance ? 
-            Math.floor(data.runVisuals.distance.remain.num) : 'N/A';
-        const elapsedTime = data.runVisuals && data.runVisuals.time ? 
-            data.runVisuals.time.elapsed.str : 'N/A';
-        const remainingTime = data.runVisuals && data.runVisuals.time ? 
-            data.runVisuals.time.remain.str : 'N/A';
+        const distanceElapsed = data.runVisuals && data.runVisuals.distance ? Math.ceil(data.runVisuals.distance.elapsed.num) : -1;
+        const distanceRemaining = data.runVisuals && data.runVisuals.distance ? Math.floor(data.runVisuals.distance.remain.num) : -1;
+        const elapsedTimeStr = data.runVisuals && data.runVisuals.time ? data.runVisuals.time.elapsed.str : 'N/A';
+        const remainingTimeStr = data.runVisuals && data.runVisuals.time ? data.runVisuals.time.remain.str : 'N/A';       
         const gpsPoints = data.gpsArr ? data.gpsArr.length : 'N/A';
         const last_gps_time = data.gpsArr && data.gpsArr.length > 0 ? 
                                 new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Istanbul', 
@@ -54,8 +50,8 @@ document.addEventListener("DOMContentLoaded", async function () {
             <tr><td style="border: 1px solid black; padding: 8px;"><b>Total Calories Burnt</b></td><td style="border: 1px solid black; padding: 8px;">${caloriesBurnt}</td></tr>
             <tr><td style="border: 1px solid black; padding: 8px;"><b>Total Distance</b></td><td style="border: 1px solid black; padding: 8px;">${distanceElapsed} meters</td></tr>
             <tr><td style="border: 1px solid black; padding: 8px;"><b>Remaining Distance</b></td><td style="border: 1px solid black; padding: 8px;">${distanceRemaining} meters</td></tr>
-            <tr><td style="border: 1px solid black; padding: 8px;"><b>Elapsed Time</b></td><td style="border: 1px solid black; padding: 8px;">${elapsedTime}</td></tr>
-            <tr><td style="border: 1px solid black; padding: 8px;"><b>Remaining Time</b></td><td style="border: 1px solid black; padding: 8px;">${remainingTime}</td></tr>
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>Elapsed Time</b></td><td style="border: 1px solid black; padding: 8px;">${elapsedTimeStr}</td></tr>
+            <tr><td style="border: 1px solid black; padding: 8px;"><b>Remaining Time</b></td><td style="border: 1px solid black; padding: 8px;">${remainingTimeStr}</td></tr>
             <tr><td style="border: 1px solid black; padding: 8px;"><b>GPS point count</b></td><td style="border: 1px solid black; padding: 8px;">${gpsPoints}</td></tr>
         </table>
         `;
@@ -83,6 +79,91 @@ document.addEventListener("DOMContentLoaded", async function () {
             });            
         } catch (error) {
             
+        }
+
+        try {
+            const totalDistance = distanceElapsed + distanceRemaining;
+            const elapsedTimeInSeconds = data.runVisuals && data.runVisuals.time ? data.runVisuals.time.elapsed.num : 0;
+            const remainingTimeInSeconds = data.runVisuals && data.runVisuals.time ? Math.max(data.runVisuals.time.remain.num, 0) : 0;
+            const totalTimeInSeconds = elapsedTimeInSeconds + remainingTimeInSeconds;            
+            // Calculate distance progress percentage
+            const distanceProgress = totalDistance > 0 ? (distanceElapsed / totalDistance) * 100 : 100;
+            // Calculate time progress percentage
+            const timeProgress = totalTimeInSeconds > 0 ? (elapsedTimeInSeconds / totalTimeInSeconds) * 100 : 100;
+            // Calculate average pace
+            const averagePace = calc_pace(distanceElapsed, elapsedTimeInSeconds);
+                // Calculate remaining pace if distanceRemaining and remainingTime are greater than zero
+            let remainingPace = null;
+            if (distanceRemaining > 0 && remainingTimeInSeconds > 0) {
+                remainingPace = calc_pace(distanceRemaining, remainingTimeInSeconds);
+            }
+
+            // Format the paces
+            const formattedAveragePace = formatPace(averagePace);
+            const formattedRemainingPace = remainingPace !== null ? formatPace(remainingPace) : 'N/A';
+
+            // Now, update the DOM
+            const summaryInfoDiv = document.getElementById('summaryInfo');
+
+            // Clear any existing content
+            summaryInfoDiv.innerHTML = '';
+
+            // Create the visual elements
+            // 1. Distance Progress Bar
+            const distanceDiv = document.createElement('div');
+            distanceDiv.innerHTML = `
+                <div>
+                    <h3 class="text-center font-bold">Distance</h3>
+                    <div class="relative pt-1">
+                        <div class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-gray-200">
+                            <div style="width:${distanceProgress}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"></div>
+                        </div>
+                        <p class="text-center">${distanceElapsed}m / ${totalDistance}m (${Math.floor(distanceElapsed/totalDistance*100)}%)</p>
+                    </div>
+                </div>
+            `;
+
+            // 2. Time Progress Bar
+            const timeDiv = document.createElement('div');
+            timeDiv.innerHTML = `
+                <div>
+                    <h3 class="text-center font-bold">Time</h3>
+                    <div class="relative pt-1">
+                        <div class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-gray-200">
+                            <div style="width:${timeProgress}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"></div>
+                        </div>
+                        <p class="text-center">${formatTime(elapsedTimeInSeconds)} / ${formatTime(totalTimeInSeconds)} (${Math.floor(elapsedTimeInSeconds/totalTimeInSeconds*100)}%)</p>
+                    </div>
+                </div>
+            `;
+
+            // 3. Remaining Pace
+            const remainingPaceDiv = document.createElement('div');
+            remainingPaceDiv.innerHTML = `
+                <div>
+                    <h3 class="text-center font-bold">Remaining Pace</h3>
+                    <p class="text-center text-2xl">${formattedRemainingPace}</p>
+                </div>
+            `;
+
+            // 4. Average Pace
+            const averagePaceDiv = document.createElement('div');
+            averagePaceDiv.innerHTML = `
+                <div>
+                    <h3 class="text-center font-bold">Average Pace</h3>
+                    <p class="text-center text-2xl">${formattedAveragePace}</p>
+                </div>
+            `;
+
+            // Append the elements to the summaryInfoDiv
+            summaryInfoDiv.appendChild(distanceDiv);
+            summaryInfoDiv.appendChild(timeDiv);
+            summaryInfoDiv.appendChild(remainingPaceDiv);
+            summaryInfoDiv.appendChild(averagePaceDiv);
+            console.log('Summary info elements added to the DOM:\n**\n', summaryInfoDiv.innerHTML, '\n**');
+
+        } catch (error) {
+            console.error('Error generating summary info:', error);
         }
     } catch (error) {
         console.error('Error fetching data:', error);
@@ -141,6 +222,11 @@ async function fetchData(username, enforceUpdate = false) {
     return the_response;
 }
 
+const PACE_MUL = 60 / 3.6;
+function calc_pace(dist_mt, time_sec) {
+  return (PACE_MUL * time_sec) / dist_mt;
+}
+
 // Function to format the pace into mm'ss'' format
 function formatPace(pace) {
     if (pace === 0) return '0\'00"';
@@ -154,6 +240,19 @@ function formatPace(pace) {
 function formatTimestamp(timestamp) {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('en-GB');
+}
+
+// Helper function to format total seconds into HH:MM:SS
+function formatTime(totalSeconds) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.round(totalSeconds % 60);
+
+    const hoursStr = hours > 0 ? `${hours}:` : '';
+    const minutesStr = `${minutes.toString().padStart(2, '0')}:`;
+    const secondsStr = seconds.toString().padStart(2, '0');
+
+    return `${hoursStr}${minutesStr}${secondsStr}`;
 }
 
 // Function to generate the chart
