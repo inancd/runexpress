@@ -86,6 +86,12 @@ async function startMap() {
         const firstPin = jsonData[0];
         const lastPin = jsonData[jsonData.length - 1];
 
+        const bounds = new google.maps.LatLngBounds();
+        jsonData.forEach(point => {
+            bounds.extend(new google.maps.LatLng(point.lat, point.lng));
+        });
+
+
         const mapCenter = { lat: (firstPin.lat + lastPin.lat) / 2, lng: (firstPin.lng + lastPin.lng) / 2 };
 
         const map = new google.maps.Map(document.getElementById("map"), {
@@ -93,6 +99,7 @@ async function startMap() {
             center: mapCenter,
             mapId: `${username}_map`,
         });
+        map.fitBounds(bounds);
 
         // Create a pin element.
         const firstPinContent = new google.maps.marker.PinElement({

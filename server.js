@@ -49,10 +49,36 @@ app.get('/:username', async (req, res) => {
   if (fileExists) {
       const stats = fs.statSync(localFilePath);
       const fileAgeInSeconds = (Date.now() - stats.mtime.getTime()) / 1000; // Time difference in seconds
+
+      // Initialize timeThreshold with default 30 seconds
+      let timeThreshold = 30;
+
+      try {
+          // Read and parse the JSON file
+          const jsonData = fs.readFileSync(localFilePath, 'utf-8');
+          const data = JSON.parse(jsonData);
+
+          // Check if lap250 exists and is a non-empty array
+          if (data.lap250 && Array.isArray(data.lap250) && data.lap250.length > 0) {
+              // Get the pace value of the last item
+              const lastLap = data.lap250[data.lap250.length - 1];
+              const pace = lastLap.pace;
+
+              // Calculate the timeThreshold
+              timeThreshold = Math.max(Math.ceil(1.05 * pace * 15), 10);
+          } else {
+              // Use fixed 30 seconds value if lap250 doesn't exist
+              timeThreshold = 30;
+          }
+      } catch (err) {
+          console.error('Error reading or parsing JSON file:', err);
+          // Use fixed 30 seconds value in case of error
+          timeThreshold = 30;
+      }
       
       // 36 seconds is 6'00'' pace for 100 meters
-      if (force_to_download && fileAgeInSeconds < 36) {
-          console.log('handleUserData-->File exists and is less than 36 seconds old. Skipping download.');
+      if (force_to_download && fileAgeInSeconds < timeThreshold) {
+          console.log(`handleUserData-->File exists and is less than ${timeThreshold} seconds old. Skipping download.`);
           force_to_download = false;
       }
   }  

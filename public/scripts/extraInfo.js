@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         </table>
         `;
                               
-      
+        let averagePace = 6.0;     
         
         // Add the table to the extraInfo div
         extraInfo.innerHTML += infoTable;
@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             // Calculate time progress percentage
             const timeProgress = totalTimeInSeconds > 0 ? (elapsedTimeInSeconds / totalTimeInSeconds) * 100 : 100;
             // Calculate average pace
-            const averagePace = calc_pace(distanceElapsed, elapsedTimeInSeconds);
+            averagePace = calc_pace(distanceElapsed, elapsedTimeInSeconds);
                 // Calculate remaining pace if distanceRemaining and remainingTime are greater than zero
             let remainingPace = null;
             if (distanceRemaining > 0 && remainingTimeInSeconds > 0) {
@@ -177,6 +177,41 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         } catch (error) {
             console.error('Error generating summary info:', error);
+        }
+
+        try {
+            // 1. Calculate the refresh interval in milliseconds
+            var refreshInterval = Math.max(Math.ceil(1.05 * averagePace * 15), 10) * 1000;
+
+            // 2. Function to refresh the page
+            function refreshPage() {
+                window.location.reload();
+            }
+
+            // Set a timeout to refresh the page after the interval
+            setTimeout(refreshPage, refreshInterval);
+
+            // 3. Set up the countdown timer
+            var remainingTime = refreshInterval / 1000; // Convert milliseconds to seconds
+
+            // Create a DOM element to display the countdown timer
+            var countdownElement = document.getElementById('countdownTimer');
+            countdownElement.innerHTML = 'Page will refresh in ' + remainingTime + ' seconds';
+            document.body.appendChild(countdownElement);
+
+            // Update the countdown timer every second
+            var countdownInterval = setInterval(function() {
+                remainingTime--;
+                if (remainingTime > 0) {
+                    countdownElement.innerHTML = 'Page will refresh in ' + remainingTime + ' seconds';
+                } else {
+                    countdownElement.innerHTML = 'Refreshing...';
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+
+        } catch (error) {
+            
         }
     } catch (error) {
         console.error('Error fetching data:', error);
