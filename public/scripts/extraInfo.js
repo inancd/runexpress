@@ -210,7 +210,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             // If last_gps_time is more than 10 minutes old, display "RunOver"
             if (timeDifference && timeDifference > 10 * 60 * 1000) { // 10 minutes in milliseconds
                 var countdownElement = document.getElementById('countdownTimer');
-                countdownElement.innerHTML = 'Run Over';
+                countdownElement.innerHTML = '';
                 document.body.appendChild(countdownElement);
 
             } else {

@@ -52,7 +52,11 @@ app.get('/:username', async (req, res) => {
 
   try {
     // Get user's IP address
-    userIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    // Normalize IPv4-mapped IPv6 addresses
+    if (userIp.startsWith('::ffff:')) {
+      userIp = userIp.split('::ffff:')[1];
+    }    
 
     // Get current timestamps
     timestamp = Date.now();
