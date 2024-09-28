@@ -49,31 +49,63 @@ app.get('/:username', async (req, res) => {
   let userIp = '???';
   let timestamp = 0;
   let readableTimestamp = '???';
-
+  let connectionCount = 1;
+  
   try {
     // Get user's IP address
     userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     // Normalize IPv4-mapped IPv6 addresses
     if (userIp.startsWith('::ffff:')) {
       userIp = userIp.split('::ffff:')[1];
-    }    
-
+    }
+  
     // Get current timestamps
     timestamp = Date.now();
-    readableTimestamp = new Date().toISOString(); // Use ISO format for readable timestamp  
-  }  
-  catch (err) {
+    readableTimestamp = new Date().toISOString(); // Use ISO format for readable timestamp
+  } catch (err) {
     readableTimestamp = 'err:<'+err.message+'>';
   }
-  // Prepare log data (IP#username#timestamp#readableTimestamp)
-  const logData = `${userIp}#${username}#${timestamp}#${readableTimestamp}\n`;
+  
+  let logExists = false;
+  
   try {
-    fs.appendFileSync(logFilePath, logData, 'utf8');
+    // Read the log file contents if it exists
+    if (fs.existsSync(logFilePath)) {
+      const logData = fs.readFileSync(logFilePath, 'utf8');
+      const logLines = logData.split('\n').filter(Boolean); // Split into lines and remove empty lines
+  
+      // Search for the user IP in the existing logs
+      logLines.forEach((line, index) => {
+        const [loggedIp, loggedUsername, loggedTimestamp, loggedReadableTimestamp, loggedCount] = line.split('#');
+  
+        // If the IP and username match and the timestamp is within 10 minutes (600000 ms)
+        if (loggedIp === userIp && loggedUsername === username && (timestamp - parseInt(loggedTimestamp)) < 600000) {
+          // Update the connection count and log entry
+          connectionCount = parseInt(loggedCount || 1) + 1;
+          logLines[index] = `${loggedIp}#${loggedUsername}#${loggedTimestamp}#${loggedReadableTimestamp}#${connectionCount}`;
+          logExists = true;
+        }
+      });
+  
+      // If an update was made, overwrite the log file with the updated data
+      if (logExists) {
+        fs.writeFileSync(logFilePath, logLines.join('\n') + '\n', 'utf8');
+      }
+    }
   } catch (err) {
-    console.error('Error logging access:', err);
-    // Ignore the error and continue the request handling
+    console.error('Error reading or updating the log file:', err);
   }
-
+  
+  // If the log entry doesn't exist or wasn't updated, create a new log entry
+  if (!logExists) {
+    const newLogData = `${userIp}#${username}#${timestamp}#${readableTimestamp}#${connectionCount}\n`;
+    try {
+      fs.appendFileSync(logFilePath, newLogData, 'utf8');
+    } catch (err) {
+      console.error('Error logging access:', err);
+      // Ignore the error and continue the request handling
+    }
+  }
 
   const fileExists = fs.existsSync(localFilePath);
   if (fileExists) {
