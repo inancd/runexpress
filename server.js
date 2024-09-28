@@ -44,6 +44,32 @@ app.get('/:username', async (req, res) => {
 
   const localFilePath = path.join(__dirname, 'data', `${username}.json`);
   let force_to_download = enforceUpdate;
+  // Append log data to a file
+  const logFilePath = path.join(__dirname, 'access_logs.txt');
+  let userIp = '???';
+  let timestamp = 0;
+  let readableTimestamp = '???';
+
+  try {
+    // Get user's IP address
+    userIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+    // Get current timestamps
+    timestamp = Date.now();
+    readableTimestamp = new Date().toISOString(); // Use ISO format for readable timestamp  
+  }  
+  catch (err) {
+    readableTimestamp = 'err:<'+err.message+'>';
+  }
+  // Prepare log data (IP#username#timestamp#readableTimestamp)
+  const logData = `${userIp}#${username}#${timestamp}#${readableTimestamp}\n`;
+  try {
+    fs.appendFileSync(logFilePath, logData, 'utf8');
+  } catch (err) {
+    console.error('Error logging access:', err);
+    // Ignore the error and continue the request handling
+  }
+
 
   const fileExists = fs.existsSync(localFilePath);
   if (fileExists) {

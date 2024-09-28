@@ -36,8 +36,9 @@ document.addEventListener("DOMContentLoaded", async function () {
                                     (data?.gpsArr?.length>0 ? (data.gpsArr[data.gpsArr.length - 1].timestamp - runParams.timestamps.lastBeginRun) / 1000 : 0);
         const totalTimeInSeconds = data.runVisuals && data.runVisuals.time ? data.runVisuals.time.remain.num+data.runVisuals.time.elapsed.num : 0;  
         const elapsedTimeStr = formatTime(elapsedTimeInSeconds);
+        const remainingTimeInSeconds = totalTimeInSeconds - elapsedTimeInSeconds;
 
-        const remainingTimeStr = data.runVisuals && data.runVisuals.time ? data.runVisuals.time.remain.str : 'N/A';       
+        const remainingTimeStr = formatTime(Math.abs(remainingTimeInSeconds));       
         const gpsPoints = data.gpsArr ? data.gpsArr.length : 'N/A';
         const last_gps_time = data.gpsArr && data.gpsArr.length > 0 ? 
                                 new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Istanbul', 
@@ -55,9 +56,23 @@ document.addEventListener("DOMContentLoaded", async function () {
             <tr><td style="border: 1px solid black; padding: 8px;"><b>Last GPS Data Time</b></td><td style="border: 1px solid black; padding: 8px;">${last_gps_time}</td></tr>
             <tr><td style="border: 1px solid black; padding: 8px;"><b>Total Calories Burnt</b></td><td style="border: 1px solid black; padding: 8px;">${caloriesBurnt}</td></tr>
             <tr><td style="border: 1px solid black; padding: 8px;"><b>Total Distance</b></td><td style="border: 1px solid black; padding: 8px;">${distanceElapsed} meters</td></tr>
-            <tr><td style="border: 1px solid black; padding: 8px;"><b>Remaining Distance</b></td><td style="border: 1px solid black; padding: 8px;">${distanceRemaining} meters</td></tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px;">
+                    <b>${distanceRemaining < 0 ? 'Overrun Distance' : 'Remaining Distance'}</b>
+                </td>
+                <td style="border: 1px solid black; padding: 8px;">
+                    ${Math.abs(distanceRemaining)} meters
+                </td>
+            </tr>
             <tr><td style="border: 1px solid black; padding: 8px;"><b>Elapsed Time</b></td><td style="border: 1px solid black; padding: 8px;">${elapsedTimeStr}</td></tr>
-            <tr><td style="border: 1px solid black; padding: 8px;"><b>Remaining Time</b></td><td style="border: 1px solid black; padding: 8px;">${remainingTimeStr}</td></tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px;">
+                    <b>${remainingTimeInSeconds < 0 ? 'Overrun Time' : 'Remaining Time'}</b>
+                </td>
+                <td style="border: 1px solid black; padding: 8px;">
+                    ${remainingTimeStr}
+                </td>
+            </tr>
             <tr><td style="border: 1px solid black; padding: 8px;"><b>GPS point count</b></td><td style="border: 1px solid black; padding: 8px;">${gpsPoints}</td></tr>
         </table>
         `;
@@ -66,6 +81,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         
         // Add the table to the extraInfo div
         extraInfo.innerHTML += infoTable;
+        extraInfo.classList.add('text-white');
 
         try {
             generateChart(data.lap1000, 1000);
@@ -92,7 +108,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
 
         try {
-            const remainingTimeInSeconds = data.runVisuals && data.runVisuals.time ? Math.max(data.runVisuals.time.remain.num, 0) : 0;
+            
                       
             // Calculate distance progress percentage
             const distanceProgress = totalDistance > 0 ? (distanceElapsed / totalDistance) * 100 : 100;
@@ -108,7 +124,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
             // Format the paces
             const formattedAveragePace = formatPace(averagePace);
-            const formattedRemainingPace = remainingPace !== null ? formatPace(remainingPace) : 'N/A';
+            const formattedRemainingPace = remainingPace !== null ? formatPace(remainingPace) : 'Planned Run Over';
 
             // Now, update the DOM
             const summaryInfoDiv = document.getElementById('summaryInfo');
@@ -168,11 +184,13 @@ document.addEventListener("DOMContentLoaded", async function () {
                 </div>
             `;
 
+
             // Append the elements to the summaryInfoDiv
             summaryInfoDiv.appendChild(distanceDiv);
             summaryInfoDiv.appendChild(timeDiv);
             summaryInfoDiv.appendChild(remainingPaceDiv);
             summaryInfoDiv.appendChild(averagePaceDiv);
+            summaryInfoDiv.classList.add('text-white');
             //console.log('Summary info elements added to the DOM:\n**\n', summaryInfoDiv.innerHTML, '\n**');
 
         } catch (error) {
@@ -180,39 +198,58 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
 
         try {
-            // 1. Calculate the refresh interval in milliseconds
-            var refreshInterval = Math.max(Math.ceil(1.05 * averagePace * 15), 10) * 1000;
+            // Convert last_gps_time to a Date object
+            const lastGpsDate = data.gpsArr && data.gpsArr.length > 0 ? new Date(data.gpsArr[data.gpsArr.length - 1].timestamp) : null;
+        
+            // Get the current time
+            const currentTime = new Date();
+        
+            // Calculate the difference in milliseconds between current time and last GPS time
+            const timeDifference = lastGpsDate ? currentTime - lastGpsDate : null;
+        
+            // If last_gps_time is more than 10 minutes old, display "RunOver"
+            if (timeDifference && timeDifference > 10 * 60 * 1000) { // 10 minutes in milliseconds
+                var countdownElement = document.getElementById('countdownTimer');
+                countdownElement.innerHTML = 'Run Over';
+                document.body.appendChild(countdownElement);
 
-            // 2. Function to refresh the page
-            function refreshPage() {
-                window.location.reload();
-            }
-
-            // Set a timeout to refresh the page after the interval
-            setTimeout(refreshPage, refreshInterval);
-
-            // 3. Set up the countdown timer
-            var remainingTime = refreshInterval / 1000; // Convert milliseconds to seconds
-
-            // Create a DOM element to display the countdown timer
-            var countdownElement = document.getElementById('countdownTimer');
-            countdownElement.innerHTML = 'Page will refresh in ' + remainingTime + ' seconds';
-            document.body.appendChild(countdownElement);
-
-            // Update the countdown timer every second
-            var countdownInterval = setInterval(function() {
-                remainingTime--;
-                if (remainingTime > 0) {
-                    countdownElement.innerHTML = 'Page will refresh in ' + remainingTime + ' seconds';
-                } else {
-                    countdownElement.innerHTML = 'Refreshing...';
-                    clearInterval(countdownInterval);
+            } else {
+                // Page refresh logic
+                var refreshInterval = Math.max(Math.ceil(1.05 * averagePace * 15), 10) * 1000;
+        
+                // 2. Function to refresh the page
+                function refreshPage() {
+                    window.location.reload();
                 }
-            }, 1000);
-
+        
+                // Set a timeout to refresh the page after the interval
+                setTimeout(refreshPage, refreshInterval);
+        
+                var remainingTime = refreshInterval / 1000; // Convert milliseconds to seconds
+        
+                // Create a DOM element to display the countdown timer
+                var countdownElement = document.getElementById('countdownTimer');
+                countdownElement.innerHTML = remainingTime + 's';
+                document.body.appendChild(countdownElement);
+        
+                // Update the countdown timer every second
+                var countdownInterval = setInterval(function() {
+                    remainingTime--;
+                    if (remainingTime > 0) {
+                        countdownElement.innerHTML = remainingTime + 's';
+                    } else {
+                        countdownElement.innerHTML = 'Refreshing...';
+                        clearInterval(countdownInterval);
+                    }
+                }, 1000);
+            }
         } catch (error) {
-            
+            console.error('Error fetching data:', error);
+            let errorParagraph = document.createElement('p');
+            errorParagraph.textContent = `Error fetching data: ${error.message}`;
+            extraInfo.appendChild(errorParagraph);
         }
+        
     } catch (error) {
         console.error('Error fetching data:', error);
         let errorParagraph = document.createElement('p');
