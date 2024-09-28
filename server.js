@@ -78,8 +78,8 @@ app.get('/:username', async (req, res) => {
       logLines.forEach((line, index) => {
         const [loggedIp, loggedUsername, loggedTimestamp, loggedReadableTimestamp, loggedCount] = line.split('#');
   
-        // If the IP and username match and the timestamp is within 10 minutes (600000 ms)
-        if (loggedIp === userIp && loggedUsername === username && (timestamp - parseInt(loggedTimestamp)) < 600000) {
+        // If the IP and username match and the timestamp is within 60 minutes (3600000 ms)
+        if (loggedIp === userIp && loggedUsername === username && (timestamp - parseInt(loggedTimestamp)) < 3600000) {
           // Update the connection count and log entry
           connectionCount = parseInt(loggedCount || 1) + 1;
           logLines[index] = `${loggedIp}#${loggedUsername}#${loggedTimestamp}#${loggedReadableTimestamp}#${connectionCount}`;
